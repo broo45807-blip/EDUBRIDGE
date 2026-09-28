@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduBridge AI — Regional STEM Learning Assistant</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            900: '#0f172a',
+                            950: '#020617'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased selection:bg-sky-500 selection:text-white">
+
+    <!-- Header / Navbar -->
+    <header class="border-b border-slate-800 bg-slate-900/60 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-3">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-xl shadow-lg shadow-sky-500/20">
+                    🎓
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold bg-gradient-to-r from-sky-400 via-indigo-300 to-fuchsia-400 bg-clip-text text-transparent">
+                        EduBridge AI
+                    </h1>
+                    <p class="text-xs text-slate-400">Bridging STEM Concepts into Deep Regional Explanations</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+                <i class="fa-solid font-mono text-xs text-slate-400 fa-key"></i>
+                <input type="password" id="apiKeyInput" placeholder="Paste Gemini API Key (AIzaSy...)" 
+                    class="w-full sm:w-64 bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500 transition">
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-5xl mx-auto px-4 py-8 space-y-8">
+
+        <!-- Input Control Panel -->
+        <section class="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-6 shadow-2xl backdrop-blur-xl relative overflow-hidden">
+            <div class="absolute -top-24 -right-24 w-60 h-60 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            
+            <div class="space-y-4 relative z-10">
+                <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                    <label for="conceptInput" class="text-sm font-semibold text-slate-200 flex items-center gap-2">
+                        <i class="fa-solid fa-book-open text-sky-400"></i> Enter English Academic / STEM Concept Paragraph
+                    </label>
+                    <div class="flex items-center gap-2">
+                        <label for="languageSelect" class="text-xs text-slate-400">Target Language:</label>
+                        <select id="languageSelect" class="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-sky-400 font-medium focus:outline-none focus:border-sky-500">
+                            <option value="Hindi">Hindi (हिंदी)</option>
+                            <option value="Marathi">Marathi (मराठी)</option>
+                            <option value="Tamil">Tamil (தமிழ்)</option>
+                            <option value="Punjabi">Punjabi (ਪੰਜਾਬੀ)</option>
+                            <option value="Telugu">Telugu (తెలుగు)</option>
+                            <option value="Bengali">Bengali (বাংলা)</option>
+                            <option value="Kannada">Kannada (கன்னட)</option>
+                            <option value="Gujarati">Gujarati (ગુજરાતી)</option>
+                            <option value="Malayalam">Malayalam (മലയാളം)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <textarea id="conceptInput" rows="4" 
+                    placeholder="Paste textbook paragraph here... (e.g., Electromagnetic induction is the process by which a changing magnetic field induces an electromotive force (EMF) and current across an electrical conductor.)"
+                    class="w-full bg-slate-950/80 border border-slate-800 rounded-xl p-4 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition resize-none"></textarea>
+
+                <div class="flex justify-between items-center pt-2">
+                    <span class="text-xs text-slate-500 flex items-center gap-1">
+                        <i class="fa-solid fa-bolt text-amber-400"></i> Powered by Gemini 2.0 Flash
+                    </span>
+                    <button id="submitBtn" onclick="processConcept()" 
+                        class="bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-medium px-6 py-2.5 rounded-xl text-sm shadow-lg shadow-sky-500/25 flex items-center gap-2 transition active:scale-95 disabled:opacity-50">
+                        <span>Simplify & Translate Concept</span>
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Loading State -->
+        <div id="loadingSpinner" class="hidden text-center py-12 space-y-3">
+            <div class="inline-block w-10 h-10 border-4 border-sky-500/20 border-t-sky-400 rounded-full animate-spin"></div>
+            <p class="text-sm text-slate-400 font-medium animate-pulse">Deconstructing concept & generating regional pedagogy...</p>
+        </div>
+
+        <!-- Output Cards Grid -->
+        <div id="outputContainer" class="hidden space-y-6">
+
+            <!-- Card 1: Curiosity Hook -->
+            <div class="bg-gradient-to-r from-amber-500/10 via-slate-900 to-slate-900 border border-amber-500/30 rounded-2xl p-5 shadow-lg flex items-start gap-4">
+                <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-lg flex-shrink-0 mt-0.5">
+                    💡
+                </div>
+                <div>
+                    <span class="text-xs font-semibold uppercase tracking-wider text-amber-400">Curiosity Hook</span>
+                    <h2 id="curiosityHookText" class="text-base font-medium text-amber-100 mt-1 leading-relaxed"></h2>
+                </div>
+            </div>
+
+            <!-- Card 2: Core Concept & 3-Step Mechanism -->
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-5">
+                <div class="flex items-center gap-3 border-b border-slate-800 pb-3">
+                    <div class="w-8 h-8 rounded-lg bg-sky-500/20 text-sky-400 flex items-center justify-center">
+                        <i class="fa-solid fa-layer-group"></i>
+                    </div>
+                    <h2 class="text-lg font-bold text-slate-100">Deep Concept & Step-by-Step Breakdown</h2>
+                </div>
+                <p id="coreConceptText" class="text-slate-300 text-sm leading-relaxed bg-slate-950/50 p-4 rounded-xl border border-slate-800/50"></p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="stepsContainer">
+                    <!-- Dynamic Steps Rendered Here -->
+                </div>
+            </div>
+
+            <!-- Card 3: Vivid Analogy & Mental Sandbox -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Vivid Analogy -->
+                <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-3">
+                    <div class="flex items-center gap-2 text-indigo-400">
+                        <i class="fa-solid fa-palette text-lg"></i>
+                        <h3 class="font-bold text-slate-200" id="analogyTitle">Real-World Analogy</h3>
+                    </div>
+                    <p id="analogyStory" class="text-xs text-slate-300 leading-relaxed bg-slate-950/40 p-3.5 rounded-xl border border-slate-800/40"></p>
+                </div>
+                <!-- Mental Sandbox -->
+                <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-3 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center gap-2 text-emerald-400">
+                            <i class="fa-solid fa-flask text-lg"></i>
+                            <h3 class="font-bold text-slate-200">Mental Sandbox</h3>
+                        </div>
+                        <p id="mentalSandboxText" class="text-xs text-slate-300 leading-relaxed mt-2 bg-slate-950/40 p-3.5 rounded-xl border border-slate-800/40"></p>
+                    </div>
+                    <div class="bg-indigo-950/40 border border-indigo-800/40 p-3 rounded-xl">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-400 block mb-1">Executive Takeaway</span>
+                        <p id="keyTakeawayText" class="text-xs text-indigo-200 font-medium"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 4: Technical Vocabulary Grid -->
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+                <div class="flex items-center gap-3 border-b border-slate-800 pb-3">
+                    <div class="w-8 h-8 rounded-lg bg-fuchsia-500/20 text-fuchsia-400 flex items-center justify-center">
+                        <i class="fa-solid fa-spell-check"></i>
+                    </div>
+                    <h2 class="text-lg font-bold text-slate-100">Technical Vocabulary Builder</h2>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-slate-950 text-slate-400 uppercase text-[10px] tracking-wider">
+                            <tr>
+                                <th class="p-3 rounded-l-lg">English Term</th>
+                                <th class="p-3">Regional Translation</th>
+                                <th class="p-3">Phonetic Script</th>
+                                <th class="p-3 rounded-r-lg">Definition</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vocabTableBody" class="divide-y divide-slate-800/60">
+                            <!-- Dynamic Vocab Rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Card 5: Concept Assessment Quiz -->
+            <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-5">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                            <i class="fa-solid fa-gamepad"></i>
+                        </div>
+                        <h2 class="text-lg font-bold text-slate-100">Interactive Recall Quiz</h2>
+                    </div>
+                    <span id="quizScore" class="text-xs font-semibold px-2.5 py-1 bg-slate-950 rounded-full border border-slate-800 text-slate-400">Score: 0 / 3</span>
+                </div>
+                <div id="quizContainer" class="space-y-6">
+                    <!-- Dynamic Quiz Questions -->
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Client-Side Application Logic -->
+    <script>
+        // Load stored API key on launch if available
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedKey = localStorage.getItem('gemini_api_key');
+            if (savedKey) document.getElementById('apiKeyInput').value = savedKey;
+        });
+
+        let currentQuizData = [];
+        let score = 0;
+
+        async function processConcept() {
+            const apiKey = document.getElementById('apiKeyInput').value.trim();
+            const conceptText = document.getElementById('conceptInput').value.trim();
+            const targetLang = document.getElementById('languageSelect').value;
+
+            if (!apiKey) {
+                alert('Please enter your Gemini API Key in the top right header field.');
+                return;
+            }
+            if (!conceptText) {
+                alert('Please enter a textbook paragraph to simplify.');
+                return;
+            }
+
+            localStorage.setItem('gemini_api_key', apiKey);
+
+            // Toggle UI States
+            document.getElementById('submitBtn').disabled = true;
+            document.getElementById('loadingSpinner').classList.remove('hidden');
+            document.getElementById('outputContainer').classList.add('hidden');
+
+            const systemInstruction = `You are an expert bilingual STEM mentor for EduBridge AI. Your goal is to break down English concepts into deep, highly detailed, and engaging explanations in the target regional language.
+Rules:
+1. Start with a 1-sentence real-world question curiosity hook in the regional script.
+2. Provide a deep breakdown of the concept and 3 sequential steps (Trigger, Process, Outcome).
+3. Keep core English scientific/technical terms intact in English script (or alongside regional script).
+4. Provide a relatable everyday regional metaphor/analogy and a 1-sentence thought experiment (Mental Sandbox).
+5. Extract 4 key English STEM vocabulary terms with translation, native phonetic pronunciation, and definition.
+6. Generate 3 concept-check multiple-choice questions (0-indexed correct answer).
+Output strictly valid JSON matching this schema format. Do not surround output with markdown code blocks.`;
+
+            const requestPayload = {
+                contents: [
+                    {
+                        parts: [
+                            { text: `Target Language: ${targetLang}\nTextbook Paragraph: ${conceptText}` }
+                        ]
+                    }
+                ],
+                systemInstruction: {
+                    parts: [{ text: systemInstruction }]
+                },
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            curiosity_hook: { type: "STRING" },
+                            core_concept: { type: "STRING" },
+                            steps: {
+                                type: "ARRAY",
+                                items: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        phase: { type: "STRING" },
+                                        desc: { type: "STRING" }
+                                    },
+                                    required: ["phase", "desc"]
+                                }
+                            },
+                            vivid_analogy: {
+                                type: "OBJECT",
+                                properties: {
+                                    title: { type: "STRING" },
+                                    story: { type: "STRING" }
+                                },
+                                required: ["title", "story"]
+                            },
+                            mental_sandbox: { type: "STRING" },
+                            key_takeaway: { type: "STRING" },
+                            vocabulary: {
+                                type: "ARRAY",
+                                items: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        english: { type: "STRING" },
+                                        translation: { type: "STRING" },
+                                        pronunciation: { type: "STRING" },
+                                        definition: { type: "STRING" }
+                                    },
+                                    required: ["english", "translation", "pronunciation", "definition"]
+                                }
+                            },
+                            quiz: {
+                                type: "ARRAY",
+                                items: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        q: { type: "STRING" },
+                                        options: { type: "ARRAY", items: { type: "STRING" } },
+                                        answer: { type: "INTEGER" },
+                                        explanation: { type: "STRING" }
+                                    },
+                                    required: ["q", "options", "answer", "explanation"]
+                                }
+                            }
+                        },
+                        required: ["curiosity_hook", "core_concept", "steps", "vivid_analogy", "mental_sandbox", "key_takeaway", "vocabulary", "quiz"]
+                    }
+                }
+            };
+
+            try {
+                const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestPayload)
+                });
+
+                if (!response.ok) {
+                    const errData = await response.json();
+                    throw new Error(errData.error?.message || 'API call failed');
+                }
+
+                const data = await response.json();
+                const rawJsonText = data.candidates[0].content.parts[0].text;
+                const result = JSON.parse(rawJsonText);
+
+                renderResults(result);
+
+            } catch (error) {
+                alert(`Error generating explanation: ${error.message}`);
+            } finally {
+                document.getElementById('submitBtn').disabled = false;
+                document.getElementById('loadingSpinner').classList.add('hidden');
+            }
+        }
+
+        function renderResults(data) {
+            // Card 1: Curiosity Hook
+            document.getElementById('curiosityHookText').textContent = data.curiosity_hook;
+
+            // Card 2: Core Concept & Steps
+            document.getElementById('coreConceptText').textContent = data.core_concept;
+            const stepsContainer = document.getElementById('stepsContainer');
+            stepsContainer.innerHTML = '';
+            
+            const stepIcons = ['⚡ Trigger', '⚙️ Process', '🎯 Outcome'];
+            data.steps.forEach((step, idx) => {
+                const stepCard = document.createElement('div');
+                stepCard.className = 'bg-slate-950/60 border border-slate-800 p-4 rounded-xl space-y-1.5';
+                stepCard.innerHTML = `
+                    <span class="text-[11px] font-bold uppercase text-sky-400 tracking-wider block">${stepIcons[idx] || step.phase}</span>
+                    <p class="text-xs text-slate-300 leading-relaxed">${step.desc}</p>
+                `;
+                stepsContainer.appendChild(stepCard);
+            });
+
+            // Card 3: Analogy & Sandbox
+            document.getElementById('analogyTitle').textContent = data.vivid_analogy.title || 'Real-World Analogy';
+            document.getElementById('analogyStory').textContent = data.vivid_analogy.story;
+            document.getElementById('mentalSandboxText').textContent = data.mental_sandbox;
+            document.getElementById('keyTakeawayText').textContent = data.key_takeaway;
+
+            // Card 4: Vocabulary Table
+            const vocabBody = document.getElementById('vocabTableBody');
+            vocabBody.innerHTML = '';
+            data.vocabulary.forEach(v => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-950/40 transition';
+                tr.innerHTML = `
+                    <td class="p-3 font-semibold text-sky-400">${v.english}</td>
+                    <td class="p-3 text-slate-200">${v.translation}</td>
+                    <td class="p-3 text-slate-400 font-mono text-[11px]">${v.pronunciation}</td>
+                    <td class="p-3 text-slate-300">${v.definition}</td>
+                `;
+                vocabBody.appendChild(tr);
+            });
+
+            // Card 5: Quiz Assessment
+            currentQuizData = data.quiz;
+            score = 0;
+            document.getElementById('quizScore').textContent = `Score: 0 / ${data.quiz.length}`;
+            const quizContainer = document.getElementById('quizContainer');
+            quizContainer.innerHTML = '';
+
+            data.quiz.forEach((qItem, qIdx) => {
+                const qDiv = document.createElement('div');
+                qDiv.className = 'bg-slate-950/50 border border-slate-800/80 p-4 rounded-xl space-y-3';
+                
+                let optionsHtml = '';
+                qItem.options.forEach((opt, oIdx) => {
+                    optionsHtml += `
+                        <button onclick="checkAnswer(${qIdx}, ${oIdx}, this)" 
+                            class="quiz-opt-${qIdx} w-full text-left p-2.5 rounded-lg border border-slate-800 bg-slate-900 text-xs text-slate-300 hover:border-slate-700 hover:bg-slate-800/80 transition flex justify-between items-center">
+                            <span>${opt}</span>
+                            <i class="fa-regular fa-circle text-slate-600 status-icon"></i>
+                        </button>
+                    `;
+                });
+
+                qDiv.innerHTML = `
+                    <p class="text-sm font-medium text-slate-200">${qIdx + 1}. ${qItem.q}</p>
+                    <div class="space-y-2">${optionsHtml}</div>
+                    <div id="quizExp-${qIdx}" class="hidden text-xs p-3 rounded-lg mt-2"></div>
+                `;
+                quizContainer.appendChild(qDiv);
+            });
+
+            // Reveal Output Container
+            document.getElementById('outputContainer').classList.remove('hidden');
+        }
+
+        function checkAnswer(qIdx, selectedIdx, btnElem) {
+            const buttons = document.querySelectorAll(`.quiz-opt-${qIdx}`);
+            buttons.forEach(b => b.disabled = true); // Disable further selection for this question
+
+            const question = currentQuizData[qIdx];
+            const expDiv = document.getElementById(`quizExp-${qIdx}`);
+
+            if (selectedIdx === question.answer) {
+                score++;
+                btnElem.classList.remove('bg-slate-900', 'border-slate-800');
+                btnElem.classList.add('bg-emerald-950/60', 'border-emerald-500', 'text-emerald-200');
+                btnElem.querySelector('.status-icon').className = 'fa-solid fa-circle-check text-emerald-400';
+                
+                expDiv.className = 'text-xs p-3 rounded-lg mt-2 bg-emerald-950/40 border border-emerald-800/40 text-emerald-200';
+                expDiv.innerHTML = `<strong>Correct!</strong> ${question.explanation}`;
+            } else {
+                btnElem.classList.remove('bg-slate-900', 'border-slate-800');
+                btnElem.classList.add('bg-rose-950/60', 'border-rose-500', 'text-rose-200');
+                btnElem.querySelector('.status-icon').className = 'fa-solid fa-circle-xmark text-rose-400';
+
+                // Highlight correct option
+                const correctBtn = buttons[question.answer];
+                correctBtn.classList.add('border-emerald-500/80', 'text-emerald-300');
+
+                expDiv.className = 'text-xs p-3 rounded-lg mt-2 bg-rose-950/40 border border-rose-800/40 text-rose-200';
+                expDiv.innerHTML = `<strong>Incorrect.</strong> ${question.explanation}`;
+            }
+
+            expDiv.classList.remove('hidden');
+            document.getElementById('quizScore').textContent = `Score: ${score} / ${currentQuizData.length}`;
+        }
+    </script>
+</body>
+</html>
